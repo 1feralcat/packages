@@ -18,20 +18,6 @@ const int _kNscountOffset = 8;
 const int _kArcountOffset = 10;
 const int _kHeaderSize = 12;
 
-/// Processes a DNS query name into a list of parts.
-///
-/// Will attempt to append 'local' if the name is something like '_http._tcp',
-/// and '._tcp.local' if name is something like '_http'.
-List<String> processDnsNameParts(String name) {
-  final List<String> parts = name.split('.');
-  if (parts.length == 1) {
-    return <String>[parts[0], '_tcp', 'local'];
-  } else if (parts.length == 2 && parts[1].startsWith('_')) {
-    return <String>[parts[0], parts[1], 'local'];
-  }
-
-  return parts;
-}
 
 /// Encode an mDNS query packet.
 ///
@@ -48,7 +34,7 @@ List<int> encodeMDnsQuery(
 }) {
   assert(ResourceRecordType.debugAssertValid(type));
 
-  final List<String> nameParts = processDnsNameParts(name);
+  final List<String> nameParts = name.split('.');
   final List<List<int>> rawNameParts =
       nameParts.map<List<int>>((String part) => utf8.encode(part)).toList();
 
