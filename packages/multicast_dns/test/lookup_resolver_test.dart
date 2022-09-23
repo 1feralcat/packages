@@ -25,7 +25,7 @@ void testTimeout() {
     const Duration shortTimeout = Duration(milliseconds: 1);
     final LookupResolver resolver = LookupResolver();
     final Stream<ResourceRecord> result = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'xxx', shortTimeout);
+        RecordType.A, 'xxx', shortTimeout);
     expect(await result.isEmpty, isTrue);
   });
 }
@@ -36,7 +36,7 @@ void testResult() {
     const Duration noTimeout = Duration(days: 1);
     final LookupResolver resolver = LookupResolver();
     final Stream<ResourceRecord> futureResult = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'xxx.local', noTimeout);
+        RecordType.A, 'xxx.local', noTimeout);
     final ResourceRecord response =
         ip4Result('xxx.local', InternetAddress('1.2.3.4'));
     resolver.handleResponse(<ResourceRecord>[response]);
@@ -52,9 +52,9 @@ void testResult2() {
     const Duration noTimeout = Duration(days: 1);
     final LookupResolver resolver = LookupResolver();
     final Stream<ResourceRecord> futureResult1 = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'xxx.local', noTimeout);
+        RecordType.A, 'xxx.local', noTimeout);
     final Stream<ResourceRecord> futureResult2 = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'yyy.local', noTimeout);
+        RecordType.A, 'yyy.local', noTimeout);
     final ResourceRecord response1 =
         ip4Result('xxx.local', InternetAddress('1.2.3.4'));
     final ResourceRecord response2 =
@@ -78,10 +78,10 @@ void testResult3() {
         ip4Result('zzz.local', InternetAddress('2.3.4.5'));
     resolver.handleResponse(<ResourceRecord>[response0]);
     final Stream<ResourceRecord> futureResult1 = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'xxx.local', noTimeout);
+        RecordType.A, 'xxx.local', noTimeout);
     resolver.handleResponse(<ResourceRecord>[response0]);
     final Stream<ResourceRecord> futureResult2 = resolver.addPendingRequest(
-        ResourceRecordType.addressIPv4, 'yyy.local', noTimeout);
+        RecordType.A, 'yyy.local', noTimeout);
     resolver.handleResponse(<ResourceRecord>[response0]);
     final ResourceRecord response1 =
         ip4Result('xxx.local', InternetAddress('1.2.3.4'));

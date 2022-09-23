@@ -13,7 +13,7 @@ class PendingRequest extends LinkedListEntry<PendingRequest> {
   PendingRequest(this.type, this.domainName, this.controller);
 
   /// The [ResourceRecordType] of the request.
-  final int type;
+  final RecordType type;
 
   /// The domain name to look up via mDNS.
   ///
@@ -36,7 +36,7 @@ class LookupResolver {
 
   /// Adds a request and returns a [Stream] of [ResourceRecord] responses.
   Stream<T> addPendingRequest<T extends ResourceRecord>(
-      int type, String name, Duration timeout) {
+      RecordType type, String name, Duration timeout) {
     final StreamController<T> controller = StreamController<T>();
     final PendingRequest request = PendingRequest(type, name, controller);
     final Timer timer = Timer(timeout, () {
@@ -52,25 +52,18 @@ class LookupResolver {
   /// listener(s) added via [addPendingRequest].
   void handleResponse(List<ResourceRecord> response) {
     for (final ResourceRecord r in response) {
-      final int type = r.resourceRecordType;
+      final RecordType type = r.resourceRecordType;
       String name = r.name.toLowerCase();
       if (name.endsWith('.')) {
         name = name.substring(0, name.length - 1);
       }
 
+
       bool responseMatches(PendingRequest request) {
         String requestName = request.domainName.toLowerCase();
-        // make, e.g. "_http" become "_http._tcp.local".
-        if (!requestName.endsWith('local')) {
-          if (!requestName.endsWith('._tcp.local') &&
-              !requestName.endsWith('._udp.local') &&
-              !requestName.endsWith('._tcp') &&
-              !requestName.endsWith('.udp')) {
-            requestName += '._tcp';
-          }
-          requestName += '.local';
-        }
-        return requestName == name && request.type == type;
+        //todo use regex
+        return (requestName == '*' || name.contains(requestName)) && (request.type == RecordType.ANY || request.type ==
+            type);
       }
 
       for (final PendingRequest pendingRequest in _pendingRequests) {

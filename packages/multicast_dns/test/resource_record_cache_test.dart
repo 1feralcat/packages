@@ -73,11 +73,11 @@ void testTimeout() {
     ]);
 
     List<ResourceRecord> results = <ResourceRecord>[];
-    cache.lookup('hest', ResourceRecordType.addressIPv4, results);
+    cache.lookup('hest', RecordType.A, results);
     expect(results.isEmpty, isFalse);
 
     results = <ResourceRecord>[];
-    cache.lookup('fisk', ResourceRecordType.addressIPv4, results);
+    cache.lookup('fisk', RecordType.A, results);
     expect(results.isEmpty, isTrue);
     expect(cache.entryCount, 1);
   });

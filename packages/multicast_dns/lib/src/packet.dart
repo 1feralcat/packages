@@ -29,11 +29,9 @@ const int _kHeaderSize = 12;
 /// selecting the correct [type] and setting the [name] parameter correctly.
 List<int> encodeMDnsQuery(
   String name, {
-  int type = ResourceRecordType.addressIPv4,
+  RecordType type = RecordType.A,
   bool multicast = true,
 }) {
-  assert(ResourceRecordType.debugAssertValid(type));
-
   final List<String> nameParts = name.split('.');
   final List<List<int>> rawNameParts =
       nameParts.map<List<int>>((String part) => utf8.encode(part)).toList();
@@ -69,7 +67,7 @@ List<int> encodeMDnsQuery(
 
   data[offset] = 0; // Empty part.
   offset++;
-  packetByteData.setUint16(offset, type); // QTYPE.
+  packetByteData.setUint16(offset, type.id); // QTYPE.
   offset += 2;
   packetByteData.setUint16(
       offset,
@@ -186,7 +184,7 @@ ResourceRecordQuery? decodeMDnsQuery(List<int> packet) {
       _readFQDN(data, packetBytes, _kHeaderSize, data.length);
 
   int offset = _kHeaderSize + fqdn.bytesRead;
-  final int type = packetBytes.getUint16(offset);
+  final RecordType type = RecordType.find(packetBytes.getUint16(offset));
   offset += 2;
   final int queryType = packetBytes.getUint16(offset) & 0x8000;
   return ResourceRecordQuery(type, fqdn.fqdn, queryType);
@@ -231,7 +229,7 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
     final String fqdn = result.fqdn;
     offset += result.bytesRead;
     checkLength(offset + 2);
-    final int type = packetBytes.getUint16(offset);
+    final RecordType type = RecordType.find(packetBytes.getUint16(offset));
     offset += 2;
     // The first bit of the rrclass field is set to indicate that the answer is
     // unique and the querier should flush the cached answer for this name
@@ -253,8 +251,14 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
     final int readDataLength = packetBytes.getUint16(offset);
     offset += 2;
     final int validUntil = DateTime.now().millisecondsSinceEpoch + ttl * 1000;
+    Map<String, dynamic> resourceData = {
+      'fqdn': fqdn,
+      'validUntil': validUntil,
+      'target': result.fqdn,
+    };
+
     switch (type) {
-      case ResourceRecordType.addressIPv4:
+      case RecordType.A:
         checkLength(offset + readDataLength);
         final StringBuffer addr = StringBuffer();
         final int stop = offset + readDataLength;
@@ -264,9 +268,10 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
           addr.write('.');
           addr.write(packetBytes.getUint8(offset));
         }
+        resourceData['address'] = InternetAddress(addr.toString());
         return IPAddressResourceRecord(fqdn, validUntil,
             address: InternetAddress(addr.toString()));
-      case ResourceRecordType.addressIPv6:
+      case RecordType.AAAA:
         checkLength(offset + readDataLength);
         final StringBuffer addr = StringBuffer();
         final int stop = offset + readDataLength;
@@ -276,12 +281,13 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
           addr.write(':');
           addr.write(packetBytes.getUint16(offset).toRadixString(16));
         }
+        resourceData['address'] = InternetAddress(addr.toString());
         return IPAddressResourceRecord(
           fqdn,
           validUntil,
           address: InternetAddress(addr.toString()),
         );
-      case ResourceRecordType.service:
+      case RecordType.SRV:
         checkLength(offset + 2);
         final int priority = packetBytes.getUint16(offset);
         offset += 2;
@@ -294,6 +300,11 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
         final _FQDNReadResult result =
             _readFQDN(data, packetBytes, offset, length);
         offset += result.bytesRead;
+
+        resourceData['port'] = port;
+        resourceData['priority'] = priority;
+        resourceData['weight'] = weight;
+
         return SrvResourceRecord(
           fqdn,
           validUntil,
@@ -302,17 +313,18 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
           priority: priority,
           weight: weight,
         );
-      case ResourceRecordType.serverPointer:
+      case RecordType.PTR:
         checkLength(offset + readDataLength);
         final _FQDNReadResult result =
             _readFQDN(data, packetBytes, offset, length);
         offset += readDataLength;
+        resourceData['domainName'] = result.fqdn;
         return PtrResourceRecord(
           fqdn,
           validUntil,
           domainName: result.fqdn,
         );
-      case ResourceRecordType.text:
+      case RecordType.TXT:
         checkLength(offset + readDataLength);
         // The first byte of the buffer is the length of the first string of
         // the TXT record. Further length-prefixed strings may follow. We
@@ -333,11 +345,12 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
           index += txtLength;
         }
         offset += readDataLength;
+        resourceData['txt'] = strings.toString();
         return TxtResourceRecord(fqdn, validUntil, text: strings.toString());
       default:
         checkLength(offset + readDataLength);
         offset += readDataLength;
-        return null;
+        return AnyResourceRecord(type, fqdn, validUntil, resourceData);
     }
   }
 

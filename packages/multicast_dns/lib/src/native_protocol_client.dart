@@ -20,8 +20,8 @@ class ResourceRecordCache {
   /// Creates a new ResourceRecordCache.
   ResourceRecordCache();
 
-  final Map<int, SplayTreeMap<String, List<ResourceRecord>>> _cache =
-      <int, SplayTreeMap<String, List<ResourceRecord>>>{};
+  final Map<RecordType, SplayTreeMap<String, List<ResourceRecord>>> _cache =
+      <RecordType, SplayTreeMap<String, List<ResourceRecord>>>{};
 
   /// The number of entries in the cache.
   int get entryCount {
@@ -40,7 +40,7 @@ class ResourceRecordCache {
     // TODO(karlklose): include flush bit in the record and only flush if
     // necessary.
     // Clear the cache for all name/type combinations to be updated.
-    final Map<int, Set<String>> seenRecordTypes = <int, Set<String>>{};
+    final Map<RecordType, Set<String>> seenRecordTypes = <RecordType, Set<String>>{};
     for (final ResourceRecord record in records) {
       // TODO(dnfield): Update this to use set literal syntax when we're able to bump the SDK constraint.
       seenRecordTypes[record.resourceRecordType] ??=
@@ -60,9 +60,7 @@ class ResourceRecordCache {
 
   /// Get a record from this cache.
   void lookup<T extends ResourceRecord>(
-      String name, int type, List<T> results) {
-    assert(ResourceRecordType.debugAssertValid(type));
-    final int time = DateTime.now().millisecondsSinceEpoch;
+      String name, RecordType type, List<T> results) {
     final SplayTreeMap<String, List<ResourceRecord>>? candidates = _cache[type];
     if (candidates == null) {
       return;
@@ -72,6 +70,7 @@ class ResourceRecordCache {
     if (candidateRecords == null) {
       return;
     }
+    final int time = DateTime.now().millisecondsSinceEpoch;
     candidateRecords
         .removeWhere((ResourceRecord candidate) => candidate.validUntil < time);
     results.addAll(candidateRecords.cast<T>());

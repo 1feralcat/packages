@@ -10,61 +10,202 @@ import 'package:meta/meta.dart';
 import 'constants.dart';
 import 'packet.dart';
 
+enum RecordType {
+
+  ///  RFC 1035[1] Address record Returns a 32-bit IPv4 address, most commonly used to map hostnames to an IP address
+  ///  of the host, but it is also used for DNSBLs, storing subnet masks in RFC 1101, etc.
+  A(1),
+
+  ///  RFC 1035[1] Name server record Delegates a DNS zone to use the given authoritative name servers
+  NS(2),
+
+  ///  RFC 1035[1] Canonical name record Alias of one name to another: the DNS lookup will continue by retrying the
+  ///  lookup with the new name.
+  CNAME(5),
+
+  ///  RFC 1035[1] and RFC 2308[11] Start of [a zone of] authority record Specifies authoritative information about a
+  ///  DNS zone, including the primary name server, the email of the domain administrator, the domain serial number, and several timers relating to refreshing the zone.
+  SOA(6),
+
+  ///  RFC 1035[1] PTR Resource Record [de] Pointer to a canonical name. Unlike a CNAME, DNS processing stops and
+  ///  just the name is returned. The most common use is for implementing reverse DNS lookups, but other uses include such things as DNS-SD.
+  PTR(12),
+
+  ///  RFC 8482 Host Information Providing Minimal-Sized Responses to DNS Queries That Have QTYPE=ANY
+  HINFO(13),
+
+  ///  RFC 1035[1] and RFC 7505 Mail exchange record Maps a domain name to a list of message transfer agents for that
+  ///  domain
+  MX(15),
+
+  ///  RFC 1035[1] Text record Originally for arbitrary human-readable text in a DNS record. Since the early 1990s,
+  ///  however, this record more often carries machine-readable data, such as specified by RFC 1464, opportunistic encryption, Sender Policy Framework, DKIM, DMARC, DNS-SD, etc.
+  TXT(16),
+
+  ///  RFC 1183 Responsible Person Information about the responsible person(s) for the domain. Usually an email
+  ///  address with the @ replaced by a .
+  RP(17),
+
+  ///  RFC 1183 AFS database record Location of database servers of an AFS cell. This record is commonly used by AFS
+  ///  clients to contact AFS cells outside their local domain. A subtype of this record is used by the obsolete DCE/DFS file system.
+  AFSDB(18),
+
+  ///  RFC 2535 Signature Signature record used in SIG(0) (RFC 2931) and TKEY (RFC 2930).[7] RFC 3755 designated
+  ///  RRSIG as the replacement for SIG for use within DNSSEC.[7]
+  SIG(24),
+
+  ///  RFC 2535[3] and RFC 2930[4] Key record Used only for SIG(0) (RFC 2931) and TKEY (RFC 2930).[5] RFC 3445
+  ///  eliminated their use for application keys and limited their use to DNSSEC.[6] RFC 3755 designates DNSKEY as the replacement within DNSSEC.[7] RFC 4025 designates IPSECKEY as the replacement for use with IPsec.[8]
+  KEY(25),
+
+  ///  RFC 3596[2] IPv6 address record Returns a 128-bit IPv6 address, most commonly used to map hostnames to an IP
+  ///  address of the host.
+  AAAA(28),
+
+  ///  RFC 1876 Location record Specifies a geographical location associated with a domain name
+  LOC(29),
+
+  ///  RFC 2782 Service locator Generalized service location record, used for newer protocols instead of creating
+  ///  protocol-specific records such as MX.
+  SRV(33),
+
+  ///  RFC 3403 Naming Authority Pointer Allows regular-expression-based rewriting of domain names which can then be
+  ///  used as URIs, further domain names to lookups, etc.
+  NAPTR(35),
+
+  ///  RFC 2230 Key Exchanger record Used with some cryptographic systems (not including DNSSEC) to identify a key
+  ///  management agent for the associated domain-name. Note that this has nothing to do with DNS Security. It is Informational status, rather than being on the IETF standards-track. It has always had limited deployment, but is still in use.
+  KX(36),
+
+  ///  RFC 4398 Certificate record Stores PKIX, SPKI, PGP, etc.
+  CERT(37),
+
+  ///  RFC 6672 Delegation name record Alias for a name and all its subnames, unlike CNAME, which is an alias for
+  ///  only the exact name. Like a CNAME record, the DNS lookup will continue by retrying the lookup with the new name.
+  DNAME(39),
+
+  /// RFC 6891	Option	This is a pseudo-record type needed to support EDNS.
+  OPT(41),
+
+  ///  RFC 3123 Address Prefix List Specify lists of address ranges, e.g. in CIDR format, for various address
+  ///  families. Experimental.
+  APL(42),
+
+  ///  RFC 4034 Delegation signer The record used to identify the DNSSEC signing key of a delegated zone
+  DS(43),
+
+  ///  RFC 4255 SSH Public Key Fingerprint Resource record for publishing SSH public host key fingerprints in the
+  ///  DNS, in order to aid in verifying the authenticity of the host. RFC 6594 defines ECC SSH keys and SHA-256 hashes. See the IANA SSHFP RR parameters registry for details.
+  SSHFP(44),
+
+  ///  RFC 4025 IPsec Key Key record that can be used with IPsec
+  IPSECKEY(45),
+
+  ///  RFC 4034 DNSSEC signature Signature for a DNSSEC-secured record set. Uses the same format as the SIG record.
+  RRSIG(46),
+
+  ///  RFC 4034 Next Secure record Part of DNSSEC—used to prove a name does not exist. Uses the same format as the
+  ///  (obsolete) NXT record.
+  NSEC(47),
+
+  ///  RFC 4034 DNS Key record The key record used in DNSSEC. Uses the same format as the KEY record.
+  DNSKEY(48),
+
+  ///  RFC 4701 DHCP identifier Used in conjunction with the FQDN option to DHCP
+  DHCID(49),
+
+  ///  RFC 5155 Next Secure record version 3 An extension to DNSSEC that allows proof of nonexistence for a name
+  ///  without permitting zonewalking
+  NSEC3(50),
+
+  ///  RFC 5155 NSEC3 parameters Parameter record for use with NSEC3
+  NSEC3PARAM(51),
+
+  ///  RFC 6698 TLSA certificate association A record for DANE. RFC 6698 defines "The TLSA DNS resource record is
+  ///  used to associate a TLS server certificate or public key with the domain name where the record is found, thus forming a 'TLSA certificate association'".
+  TLSA(52),
+
+  ///  RFC 8162[9] S/MIME cert association[10] Associates an S/MIME certificate with a domain name for sender
+  ///  authentication.
+  SMIMEA(53),
+
+  ///  RFC 8005 Host Identity Protocol Method of separating the end-point identifier and locator roles of IP addresses.
+  HIP(55),
+
+  ///  RFC 7344 Child DS Child copy of DS record, for transfer to parent
+  CDS(59),
+
+  ///  RFC 7344 Child copy of DNSKEY record, for transfer to parent
+  CDNSKEY(60),
+
+  ///  RFC 7929 OpenPGP public key record A DNS-based Authentication of Named Entities (DANE) method for publishing
+  ///  and locating OpenPGP public keys in DNS for a specific email address using an OPENPGPKEY DNS resource record.
+  OPENPGPKEY(61),
+
+  ///  RFC 7477 Child-to-Parent Synchronization Specify a synchronization mechanism between a child and a parent DNS
+  ///  zone. Typical example is declaring the same NS records in the parent and the child zone
+  CSYNC(62),
+
+  ///  RFC 8976 Message Digests for DNS Zones Provides a cryptographic message digest over DNS zone data at rest.
+  ZONEMD(63),
+
+  ///  IETF Draft Service Binding RR that improves performance for clients that need to resolve many resources to
+  ///  access a domain. More info in this IETF Draft by DNSOP Working group and Akamai technologies.
+  SVCB(64),
+
+  ///  IETF Draft HTTPS Binding RR that improves performance for clients that need to resolve many resources to
+  ///  access a domain. More info in this IETF Draft by DNSOP Working group and Akamai technologies.
+  HTTPS(65),
+
+  ///  RFC 7043 MAC address (EUI-48) A 48-bit IEEE Extended Unique Identifier.
+  EUI48(108),
+
+  ///  RFC 7043 MAC address (EUI-64) A 64-bit IEEE Extended Unique Identifier.
+  EUI64(109),
+
+  ///  RFC 2930 Transaction Key record A method of providing keying material to be used with TSIG that is encrypted
+  ///  under the public key in an accompanying KEY RR.[12]
+  TKEY(249),
+
+  ///  RFC 2845 Transaction Signature Can be used to authenticate dynamic updates as coming from an approved client,
+  ///  or to authenticate responses as coming from an approved recursive name server[13] similar to DNSSEC.
+  TSIG(250),
+
+  ANY(255),
+
+  ///  RFC 7553 Uniform Resource Identifier Can be used for publishing mappings from hostnames to URIs.
+  URI(256),
+
+  ///  RFC 6844 Certification Authority Authorization DNS Certification Authority Authorization, constraining
+  ///  acceptable CAs for a host/domain
+  CAA(257),
+
+  ///  — DNSSEC Trust Authorities Part of a deployment proposal for DNSSEC without a signed DNS root. See the IANA
+  ///  database and Weiler Spec for details. Uses the same format as the DS record.
+  TA(32768),
+
+  ///  RFC 4431 DNSSEC Lookaside Validation record For publishing DNSSEC trust anchors outside of the DNS delegation
+  ///  chain. Uses the same format as the DS record. RFC 5074 describes a way of using these records.
+  DLV(32769),
+  ;
+
+  final int id;
+  const RecordType(this.id);
+
+  /// Find RecordType matching the 'num'
+  static RecordType find(int num) => RecordType.values.firstWhere((t) => t.id == num, orElse: (){
+    print("UNKNOWN type id $num");
+    return RecordType.ANY;
+  });
+
+  String toString() => '$name($id)';
+}
+
 /// Enumeration of support resource record types.
 abstract class ResourceRecordType {
   // This class is intended to be used as a namespace, and should not be
   // extended directly.
   ResourceRecordType._();
-
-  /// An IPv4 Address record, also known as an "A" record. It has a value of 1.
-  static const int addressIPv4 = 1;
-
-  /// An IPv6 Address record, also known as an "AAAA" record.  It has a vaule of
-  /// 28.
-  static const int addressIPv6 = 28;
-
-  /// An IP Address reverse map record, also known as a "PTR" recored. It has a
-  /// value of 12.
-  static const int serverPointer = 12;
-
-  /// An available service record, also known as an "SRV" record.  It has a
-  /// value of 33.
-  static const int service = 33;
-
-  /// A text record, also known as a "TXT" record.  It has a value of 16.
-  static const int text = 16;
-
-  // TODO(dnfield): Support ANY in some meaningful way.  Might be server only.
-  // /// A query for all records of all types known to the name server.
-  // static const int any = 255;
-
-  /// Checks that a given int is a valid ResourceRecordType.
-  ///
-  /// This method is intended to be called only from an `assert()`.
-  static bool debugAssertValid(int resourceRecordType) {
-    return resourceRecordType == addressIPv4 ||
-        resourceRecordType == addressIPv6 ||
-        resourceRecordType == serverPointer ||
-        resourceRecordType == service ||
-        resourceRecordType == text;
-  }
-
-  /// Prints a debug-friendly version of the resource record type value.
-  static String toDebugString(int resourceRecordType) {
-    switch (resourceRecordType) {
-      case addressIPv4:
-        return 'A (IPv4 Address)';
-      case addressIPv6:
-        return 'AAAA (IPv6 Address)';
-      case serverPointer:
-        return 'PTR (Domain Name Pointer)';
-      case service:
-        return 'SRV (Service record)';
-      case text:
-        return 'TXT (Text)';
-    }
-    return 'Unknown ($resourceRecordType)';
-  }
 }
 
 /// Represents a DNS query.
@@ -77,14 +218,14 @@ class ResourceRecordQuery {
     this.resourceRecordType,
     this.fullyQualifiedName,
     this.questionType,
-  ) : assert(ResourceRecordType.debugAssertValid(resourceRecordType));
+  );
 
   /// An A (IPv4) query.
   ResourceRecordQuery.addressIPv4(
     String name, {
     bool isMulticast = true,
   }) : this(
-          ResourceRecordType.addressIPv4,
+          RecordType.A,
           name,
           isMulticast ? QuestionType.multicast : QuestionType.unicast,
         );
@@ -94,7 +235,7 @@ class ResourceRecordQuery {
     String name, {
     bool isMulticast = true,
   }) : this(
-          ResourceRecordType.addressIPv6,
+          RecordType.AAAA,
           name,
           isMulticast ? QuestionType.multicast : QuestionType.unicast,
         );
@@ -104,7 +245,7 @@ class ResourceRecordQuery {
     String name, {
     bool isMulticast = true,
   }) : this(
-          ResourceRecordType.serverPointer,
+          RecordType.SRV,
           name,
           isMulticast ? QuestionType.multicast : QuestionType.unicast,
         );
@@ -114,7 +255,7 @@ class ResourceRecordQuery {
     String name, {
     bool isMulticast = true,
   }) : this(
-          ResourceRecordType.service,
+          RecordType.SRV,
           name,
           isMulticast ? QuestionType.multicast : QuestionType.unicast,
         );
@@ -124,13 +265,23 @@ class ResourceRecordQuery {
     String name, {
     bool isMulticast = true,
   }) : this(
-          ResourceRecordType.text,
+          RecordType.TXT,
           name,
           isMulticast ? QuestionType.multicast : QuestionType.unicast,
         );
 
+  /// Query for anything!
+  ResourceRecordQuery.any(
+      String name, {
+        bool isMulticast = true,
+      }) : this(
+    RecordType.ANY,
+    name,
+    isMulticast ? QuestionType.multicast : QuestionType.unicast,
+  );
+
   /// Tye type of resource record - one of [ResourceRecordType]'s values.
-  final int resourceRecordType;
+  final RecordType resourceRecordType;
 
   /// The Fully Qualified Domain Name associated with the request.
   final String fullyQualifiedName;
@@ -160,14 +311,16 @@ class ResourceRecordQuery {
   @override
   bool operator ==(Object other) {
     return other is ResourceRecordQuery &&
-        other.resourceRecordType == resourceRecordType &&
-        other.fullyQualifiedName == fullyQualifiedName &&
+        (other.resourceRecordType == resourceRecordType || other.resourceRecordType == RecordType.ANY ||
+            resourceRecordType == RecordType.ANY) &&
+        (other.fullyQualifiedName == fullyQualifiedName || other.fullyQualifiedName == '*' ||
+            fullyQualifiedName == '*') &&
         other.questionType == questionType;
   }
 
   @override
   String toString() =>
-      '$runtimeType{$fullyQualifiedName, type: ${ResourceRecordType.toDebugString(resourceRecordType)}, isMulticast: $isMulticast}';
+      '$runtimeType{$fullyQualifiedName, type: $resourceRecordType, isMulticast: $isMulticast}';
 }
 
 /// Base implementation of DNS resource records (RRs).
@@ -183,13 +336,14 @@ abstract class ResourceRecord {
   final int validUntil;
 
   /// The raw resource record value.  See [ResourceRecordType] for supported values.
-  final int resourceRecordType;
+  final RecordType resourceRecordType;
 
   String get _additionalInfo;
 
   @override
   String toString() =>
-      '$runtimeType{$name, validUntil: ${DateTime.fromMillisecondsSinceEpoch(validUntil)}, $_additionalInfo}';
+      '$runtimeType {${resourceRecordType} $name, validUntil: ${DateTime.fromMillisecondsSinceEpoch(validUntil)}, '
+          '$_additionalInfo}';
 
   @override
   int get hashCode => Object.hash(name, validUntil, resourceRecordType);
@@ -217,7 +371,7 @@ class PtrResourceRecord extends ResourceRecord {
     String name,
     int validUntil, {
     required this.domainName,
-  }) : super(ResourceRecordType.serverPointer, name, validUntil);
+  }) : super(RecordType.PTR, name, validUntil);
 
   /// The FQDN for this record.
   final String domainName;
@@ -250,8 +404,8 @@ class IPAddressResourceRecord extends ResourceRecord {
     required this.address,
   }) : super(
             address.type == InternetAddressType.IPv4
-                ? ResourceRecordType.addressIPv4
-                : ResourceRecordType.addressIPv6,
+                ? RecordType.A
+                : RecordType.AAAA,
             name,
             validUntil);
 
@@ -287,7 +441,7 @@ class SrvResourceRecord extends ResourceRecord {
     required this.port,
     required this.priority,
     required this.weight,
-  }) : super(ResourceRecordType.service, name, validUntil);
+  }) : super(RecordType.SRV, name, validUntil);
 
   /// The hostname for this record.
   final String target;
@@ -339,7 +493,7 @@ class TxtResourceRecord extends ResourceRecord {
     String name,
     int validUntil, {
     required this.text,
-  }) : super(ResourceRecordType.text, name, validUntil);
+  }) : super(RecordType.TXT, name, validUntil);
 
   /// The raw text from this record.
   final String text;
@@ -358,4 +512,19 @@ class TxtResourceRecord extends ResourceRecord {
   Uint8List encodeResponseRecord() {
     return Uint8List.fromList(utf8.encode(text));
   }
+}
+
+class AnyResourceRecord extends ResourceRecord {
+  Map<String, dynamic> data;
+  AnyResourceRecord(super.resourceRecordType, super.name, super.validUntil, this.data);
+
+  @override
+  String get _additionalInfo => json.encode({'type': resourceRecordType.toString(), 'data': data});
+
+  @override
+  Uint8List encodeResponseRecord() {
+    //todo fix this
+    return Uint8List.fromList(utf8.encode(json.encode(data)));
+  }
+
 }
