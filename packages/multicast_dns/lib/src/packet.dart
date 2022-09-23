@@ -349,6 +349,7 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
         return TxtResourceRecord(fqdn, validUntil, text: strings.toString());
       default:
         checkLength(offset + readDataLength);
+        resourceData['data'] = Uint8List.view(data.buffer, offset, readDataLength);
         offset += readDataLength;
         return AnyResourceRecord(type, fqdn, validUntil, resourceData);
     }
