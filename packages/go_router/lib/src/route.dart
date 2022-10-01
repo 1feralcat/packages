@@ -347,7 +347,7 @@ class GoRoute extends RouteBase {
 ///
 /// ```
 /// final GlobalKey<NavigatorState> _rootNavigatorKey =
-//     GlobalKey<NavigatorState>();
+///     GlobalKey<NavigatorState>();
 ///
 ///   final GoRouter _router = GoRouter(
 ///     navigatorKey: _rootNavigatorKey,
@@ -440,7 +440,8 @@ class ShellRoute extends RouteBase {
         super._() {
     for (final RouteBase route in routes) {
       if (route is GoRoute) {
-        assert(route.parentNavigatorKey == null);
+        assert(route.parentNavigatorKey == null ||
+            route.parentNavigatorKey == navigatorKey);
       }
     }
   }
