@@ -43,7 +43,7 @@ void testValidPackages() {
       TxtResourceRecord(
         'raspberrypi [b8:27:eb:03:92:4b]._workstation._tcp.local',
         result[0].validUntil,
-        text: '',
+        text: [''],
       ),
       PtrResourceRecord(
         '_udisks-ssh._tcp.local',
@@ -61,7 +61,7 @@ void testValidPackages() {
       TxtResourceRecord(
         'raspberrypi._udisks-ssh._tcp.local',
         result[3].validUntil,
-        text: '',
+        text: [''],
       ),
       PtrResourceRecord('_services._dns-sd._udp.local', result[4].validUntil,
           domainName: '_udisks-ssh._tcp.local'),
@@ -96,7 +96,7 @@ void testValidPackages() {
       TxtResourceRecord(
         'fletch-agent on raspberrypi._fletch_agent._tcp.local',
         result[1].validUntil,
-        text: '',
+        text: [''],
       ),
       SrvResourceRecord(
         'fletch-agent on raspberrypi._fletch_agent._tcp.local',
@@ -160,7 +160,7 @@ void testValidPackages() {
       TxtResourceRecord(
         '______________________.____________.____._____',
         result[1].validUntil,
-        text: 'model=MacBookPro14,3\nosxvers=18\necolor=225,225,223\n',
+        text: ['model=MacBookPro14,3","osxvers=18","ecolor=225,225,223'],
       ),
     ]);
   });
@@ -178,7 +178,7 @@ void testValidPackages() {
       TxtResourceRecord(
         '______________________.____________.____._____',
         result[1].validUntil,
-        text: '${')' * 129}\n',
+        text: ['${')' * 129}'],
       ),
     ]);
   });

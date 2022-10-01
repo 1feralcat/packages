@@ -303,6 +303,11 @@ class ResourceRecordQuery {
       multicast: isMulticast,
     );
   }
+  List<int> encodeRecord(r) {
+    return encodeResourceRecord(fullyQualifiedName, r,
+      multicast: isMulticast,
+    );
+  }
 
   @override
   int get hashCode =>
@@ -362,6 +367,36 @@ abstract class ResourceRecord {
   /// into a `Uint8List`, which could then be used to write a pakcet to send
   /// as a response for this record type.
   Uint8List encodeResponseRecord();
+
+  Uint8List _encodeBasic(int dataSize) {
+    int size = 0;
+    final List<List<int>> rawNameParts =
+    name.split('.').map<List<int>>((String part) => utf8.encode(part)).toList();
+    for (int i = 0; i < rawNameParts.length; i++) {
+      size += 1 + rawNameParts[i].length;
+    }
+    size += 1;
+    final Uint8List data = Uint8List(size + 10 + dataSize);
+    int offset = 0;
+    for (int i = 0; i < rawNameParts.length; i++) {
+      data[offset++] = rawNameParts[i].length;
+      data.setRange(offset, offset + rawNameParts[i].length, rawNameParts[i]);
+      offset += rawNameParts[i].length;
+    }
+    data[offset] = 0; // Empty part.
+    offset++;
+    final ByteData resultData = ByteData.view(data.buffer);
+    resultData.setUint16(offset, resourceRecordType.id);
+    offset += 2;
+    resultData.setUint16(offset, ResourceRecordClass.internet);
+    offset += 2;
+    resultData.setInt32(offset, validUntil - DateTime.now().millisecondsSinceEpoch);
+    offset += 4;
+
+    resultData.setUint16(offset, dataSize);
+    offset += 2;
+    return data;
+  }
 }
 
 /// A Service Pointer for reverse mapping an IP address (DNS "PTR").
@@ -391,7 +426,23 @@ class PtrResourceRecord extends ResourceRecord {
 
   @override
   Uint8List encodeResponseRecord() {
-    return Uint8List.fromList(utf8.encode(domainName));
+    int size = 0;
+    List<List<int>> rawTargetParts =
+    domainName.split('.').map<List<int>>((String part) => utf8.encode(part)).toList();
+    for (int i = 0; i < rawTargetParts.length; i++) {
+      size += 1 + rawTargetParts[i].length;
+    }
+    size += 1;
+    var data = _encodeBasic(size);
+    int offset = data.length - size;
+    for (int i = 0; i < rawTargetParts.length; i++) {
+      data[offset++] = rawTargetParts[i].length;
+      data.setRange(offset, offset + rawTargetParts[i].length, rawTargetParts[i]);
+      offset += rawTargetParts[i].length;
+    }
+    data[offset] = 0; // Empty part.
+    offset++;
+    return data;
   }
 }
 
@@ -475,14 +526,30 @@ class SrvResourceRecord extends ResourceRecord {
 
   @override
   Uint8List encodeResponseRecord() {
-    final List<int> data = utf8.encode(target);
-    final Uint8List result = Uint8List(data.length + 7);
-    final ByteData resultData = ByteData.view(result.buffer);
-    resultData.setUint16(0, priority);
-    resultData.setUint16(2, weight);
-    resultData.setUint16(4, port);
-    result[6] = data.length;
-    return result..setRange(7, data.length, data);
+    int size = 6; // for the priority, weight, port - below
+    List<List<int>> rawTargetParts =
+        target.split('.').map<List<int>>((String part) => utf8.encode(part)).toList();
+    for (int i = 0; i < rawTargetParts.length; i++) {
+      size += 1 + rawTargetParts[i].length;
+    }
+    size += 1;
+    var data = _encodeBasic(size);
+    final ByteData resultData = ByteData.view(data.buffer);
+    int offset = data.length - size;
+    resultData.setUint16(offset, priority);
+    offset += 2;
+    resultData.setUint16(offset, weight);
+    offset += 2;
+    resultData.setUint16(offset, port);
+    offset += 2;
+    for (int i = 0; i < rawTargetParts.length; i++) {
+      data[offset++] = rawTargetParts[i].length;
+      data.setRange(offset, offset + rawTargetParts[i].length, rawTargetParts[i]);
+      offset += rawTargetParts[i].length;
+    }
+    data[offset] = 0; // Empty part.
+    offset++;
+    return data;
   }
 }
 
@@ -496,7 +563,7 @@ class TxtResourceRecord extends ResourceRecord {
   }) : super(RecordType.TXT, name, validUntil);
 
   /// The raw text from this record.
-  final String text;
+  final List<String> text;
 
   @override
   String get _additionalInfo => 'text: $text';
@@ -510,10 +577,22 @@ class TxtResourceRecord extends ResourceRecord {
 
   @override
   Uint8List encodeResponseRecord() {
-    return Uint8List.fromList(utf8.encode(text));
+    int sizeText = 0;
+    for (String s in text) {
+      sizeText += s.length + 1;
+    }
+    final data = _encodeBasic(sizeText);
+    int offset = data.length - sizeText;
+    for (String s in text) {
+      data[offset++] = s.length;
+      data.setRange(offset, offset + s.length, utf8.encode(s));
+      offset += s.length;
+    }
+    return data;
   }
 }
 
+/// todo incomplete
 class AnyResourceRecord extends ResourceRecord {
   Map<String, dynamic> data;
   AnyResourceRecord(super.resourceRecordType, super.name, super.validUntil, this.data);

@@ -19,6 +19,22 @@ const int _kArcountOffset = 10;
 const int _kHeaderSize = 12;
 
 
+List<int> encodeResourceRecord(  String name, ResourceRecord r, {bool multicast:true}
+    ) {
+  var rdata = r.encodeResponseRecord();
+  int size = _kHeaderSize;
+  size += rdata.length;
+  final Uint8List data = Uint8List(size);
+  final ByteData packetByteData = ByteData.view(data.buffer);
+  packetByteData.setUint16(_kAncountOffset, 1);
+  packetByteData.setUint16(_kNscountOffset, 0);
+  packetByteData.setUint16(_kArcountOffset, 0);
+  packetByteData.setUint16(_kQdcountOffset, 0); // if this is 1, add rawNameParts
+  int offset = _kHeaderSize;
+  data.setRange(offset, offset+rdata.length, rdata);
+  return data;
+}
+
 /// Encode an mDNS query packet.
 ///
 /// The [type] parameter must be a valid [ResourceRecordType] value. The
@@ -195,10 +211,16 @@ ResourceRecordQuery? decodeMDnsQuery(List<int> packet) {
 /// If decoding fails (e.g. due to an invalid packet) `null` is returned.
 ///
 /// See https://tools.ietf.org/html/rfc1035 for the format.
-List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
+List<ResourceRecord> decodeMDnsResponse(List<int> packet) {
+
+  // This list can't be fixed length right now because we might get
+  // resource record types we don't support, and consumers expect this list
+  // to not have null entries.
+  final List<ResourceRecord> result = <ResourceRecord>[];
+
   final int length = packet.length;
   if (length < _kHeaderSize) {
-    return null;
+    return result;
   }
 
   final Uint8List data =
@@ -211,7 +233,7 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
   final int remainingCount = answerCount + authorityCount + additionalCount;
 
   if (remainingCount == 0) {
-    return null;
+    return result;
   }
 
   final int questionCount = packetBytes.getUint16(_kQdcountOffset);
@@ -329,7 +351,7 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
         // The first byte of the buffer is the length of the first string of
         // the TXT record. Further length-prefixed strings may follow. We
         // concatenate them with newlines.
-        final StringBuffer strings = StringBuffer();
+        final List<String> strings = [];
         int index = 0;
         while (index < readDataLength) {
           final int txtLength = data[offset + index];
@@ -341,12 +363,12 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
             Uint8List.view(data.buffer, offset + index, txtLength),
             allowMalformed: true,
           );
-          strings.writeln(text);
+          strings.add(text);
           index += txtLength;
         }
         offset += readDataLength;
         resourceData['txt'] = strings.toString();
-        return TxtResourceRecord(fqdn, validUntil, text: strings.toString());
+        return TxtResourceRecord(fqdn, validUntil, text: strings);
       default:
         checkLength(offset + readDataLength);
         resourceData['data'] = Uint8List.view(data.buffer, offset, readDataLength);
@@ -354,11 +376,6 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
         return AnyResourceRecord(type, fqdn, validUntil, resourceData);
     }
   }
-
-  // This list can't be fixed length right now because we might get
-  // resource record types we don't support, and consumers expect this list
-  // to not have null entries.
-  final List<ResourceRecord> result = <ResourceRecord>[];
 
   try {
     for (int i = 0; i < questionCount; i++) {
@@ -376,7 +393,6 @@ List<ResourceRecord>? decodeMDnsResponse(List<int> packet) {
     }
   } on MDnsDecodeException {
     // If decoding fails return null.
-    return null;
   }
   return result;
 }
