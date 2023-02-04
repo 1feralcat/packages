@@ -1,3 +1,96 @@
+## 6.0.3
+
+- Makes `CustomTransitionPage.barrierDismissible` work
+
+## 6.0.2
+
+- Fixes missing result on pop in go_router extension.
+
+## 6.0.1
+
+- Fixes crashes when popping navigators manually.
+- Fixes trailing slashes after pops.
+
+## 6.0.0
+
+- **BREAKING CHANGE**
+  - `GoRouteData`'s `redirect` now takes 2 parameters `BuildContext context, GoRouterState state`.
+  - `GoRouteData`'s `build` now takes 2 parameters `BuildContext context, GoRouterState state`.
+  - `GoRouteData`'s `buildPageWithState` has been removed and replaced by `buildPage` with now takes 2 parameters `BuildContext context, GoRouterState state`.
+  - `replace` from `GoRouter`, `GoRouterDelegate` and `GoRouterHelper` has been renamed into `pushReplacement`. 
+  - `replaceNamed` from `GoRouter`, `GoRouterDelegate` and `GoRouterHelper` has been renamed into `pushReplacementNamed`. 
+  - [go_router v6 migration guide](https://flutter.dev/go/go-router-v6-breaking-changes)
+
+## 5.2.4
+
+- Fixes crashes when using async redirect.
+
+## 5.2.3
+
+- Fixes link for router configuration and sub-routes
+
+## 5.2.2
+
+- Fixes `pop` and `push` to update urls correctly.
+
+## 5.2.1
+
+- Refactors `GoRouter.pop` to be able to pop individual pageless route with result.
+
+## 5.2.0
+
+- Fixes `GoRouterState.location` and `GoRouterState.param` to return correct value.
+- Cleans up `RouteMatch` and `RouteMatchList` API.
+
+## 5.1.10
+
+- Fixes link of ShellRoute in README.
+
+## 5.1.9
+
+- Fixes broken links in documentation.
+
+## 5.1.8
+
+- Fixes a bug with `replace` where it was not generated a new `pageKey`.
+
+## 5.1.7
+
+- Adds documentation using dartdoc topics.
+
+## 5.1.6
+
+- Fixes crashes when multiple `GoRoute`s use the same `parentNavigatorKey` in a route subtree.
+
+## 5.1.5
+
+- Adds migration guide for 5.1.2 to readme.
+
+## 5.1.4
+
+- Fixes the documentation by removing the `ShellRoute`'s non-existing `path` parameter from it.
+
+## 5.1.3
+
+- Allows redirection to return same location.
+
+## 5.1.2
+
+- Adds GoRouterState to context.
+- Fixes GoRouter notification.
+- Updates README.
+- Removes dynamic calls in examples.
+- **BREAKING CHANGE**
+  - Remove NavigatorObserver mixin from GoRouter
+
+## 5.1.1
+
+- Removes DebugGoRouteInformation.
+
+## 5.1.0
+
+- Removes urlPathStrategy completely, which should have been done in v5.0.0 but some code remained mistakenly.
+
 ## 5.0.5
 
 - Fixes issue where asserts in popRoute were preventing the app from

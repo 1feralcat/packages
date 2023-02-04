@@ -1,7 +1,16 @@
+## 1.0.16
+
+* Update the documentation to go_router v6.0.0.
+* Bumps go_router version in example folder to v6.0.0.
+
+## 1.0.15
+
+* Avoids using deprecated DartType.element2.
+
 ## 1.0.14
 
-* Bumps go_router version in example folder to v5.0.0
-* Bumps flutter version to 3.3.0
+* Bumps go_router version in example folder to v5.0.0.
+* Bumps flutter version to 3.3.0.
 
 ## 1.0.13
 

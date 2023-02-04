@@ -110,7 +110,7 @@ class AdaptiveScaffold extends StatefulWidget {
   final List<NavigationDestination> destinations;
 
   /// The index to be used by the [NavigationRail].
-  final int selectedIndex;
+  final int? selectedIndex;
 
   /// Option to display a leading widget at the top of the navigation rail
   /// at the middle breakpoint.
@@ -212,12 +212,12 @@ class AdaptiveScaffold extends StatefulWidget {
   /// Option to override the drawerBreakpoint for the usage of [Drawer] over the
   /// usual [BottomNavigationBar].
   ///
-  /// Defaults to [Breakpoints.onlySmallDesktop].
+  /// Defaults to [Breakpoints.smallDesktop].
   final Breakpoint drawerBreakpoint;
 
   /// Option to override the default [AppBar] when using drawer in desktop
   /// small.
-  final AppBar? appBar;
+  final PreferredSizeWidget? appBar;
 
   /// Callback function for when the index of a [NavigationRail] changes.
   final Function(int)? onSelectedIndexChange;
@@ -251,7 +251,7 @@ class AdaptiveScaffold extends StatefulWidget {
   static Builder standardNavigationRail({
     required List<NavigationRailDestination> destinations,
     double width = 72,
-    int selectedIndex = 0,
+    int? selectedIndex,
     bool extended = false,
     Color backgroundColor = Colors.transparent,
     EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
@@ -303,18 +303,22 @@ class AdaptiveScaffold extends StatefulWidget {
 
   /// Public helper method to be used for creating a [BottomNavigationBar] from
   /// a list of [NavigationDestination]s.
-  static Builder standardBottomNavigationBar(
-      {required List<NavigationDestination> destinations,
-      int currentIndex = 0,
-      double iconSize = 24}) {
+  static Builder standardBottomNavigationBar({
+    required List<NavigationDestination> destinations,
+    int? currentIndex,
+    double iconSize = 24,
+    ValueChanged<int>? onDestinationSelected,
+  }) {
+    currentIndex ??= 0;
     return Builder(
       builder: (_) {
         return BottomNavigationBar(
-          currentIndex: currentIndex,
+          currentIndex: currentIndex ?? 0,
           iconSize: iconSize,
           items: destinations
               .map((NavigationDestination e) => _toBottomNavItem(e))
               .toList(),
+          onTap: onDestinationSelected,
         );
       },
     );
@@ -477,6 +481,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
             ? Drawer(
                 child: NavigationRail(
                   extended: true,
+                  leading: widget.leadingExtendedNavRail,
+                  trailing: widget.trailingNavRail,
                   selectedIndex: widget.selectedIndex,
                   destinations: widget.destinations
                       .map((_) => AdaptiveScaffold.toRailDestination(_))
@@ -495,6 +501,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 key: const Key('primaryNavigation'),
                 builder: (_) => AdaptiveScaffold.standardNavigationRail(
                   width: widget.navigationRailWidth,
+                  leading: widget.leadingUnextendedNavRail,
+                  trailing: widget.trailingNavRail,
                   selectedIndex: widget.selectedIndex,
                   destinations: widget.destinations
                       .map((_) => AdaptiveScaffold.toRailDestination(_))
@@ -507,6 +515,8 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                 builder: (_) => AdaptiveScaffold.standardNavigationRail(
                   width: widget.extendedNavigationRailWidth,
                   extended: true,
+                  leading: widget.leadingExtendedNavRail,
+                  trailing: widget.trailingNavRail,
                   selectedIndex: widget.selectedIndex,
                   destinations: widget.destinations
                       .map((_) => AdaptiveScaffold.toRailDestination(_))
@@ -524,7 +534,10 @@ class _AdaptiveScaffoldState extends State<AdaptiveScaffold> {
                           key: const Key('bottomNavigation'),
                           builder: (_) =>
                               AdaptiveScaffold.standardBottomNavigationBar(
-                                  destinations: widget.destinations),
+                            currentIndex: widget.selectedIndex,
+                            destinations: widget.destinations,
+                            onDestinationSelected: widget.onSelectedIndexChange,
+                          ),
                         ),
                       },
                     )

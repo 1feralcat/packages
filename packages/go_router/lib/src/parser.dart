@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'configuration.dart';
+import 'delegate.dart';
 import 'information_provider.dart';
 import 'logging.dart';
 import 'matching.dart';
@@ -53,17 +54,6 @@ class GoRouteInformationParser extends RouteInformationParser<RouteMatchList> {
     RouteInformation routeInformation,
     BuildContext context,
   ) {
-    assert(() {
-      if (debugRequireGoRouteInformationProvider) {
-        assert(
-          routeInformation is DebugGoRouteInformation,
-          'This GoRouteInformationParser needs to be used with '
-          'GoRouteInformationProvider, did you forget to pass in '
-          'GoRouter.routeInformationProvider to the Router constructor?',
-        );
-      }
-      return true;
-    }());
     late final RouteMatchList initialMatches;
     try {
       initialMatches = matcher.findMatch(routeInformation.location!,
@@ -73,7 +63,7 @@ class GoRouteInformationParser extends RouteInformationParser<RouteMatchList> {
 
       // If there is a matching error for the initial location, we should
       // still try to process the top-level redirects.
-      initialMatches = RouteMatchList.empty();
+      initialMatches = RouteMatchList.empty;
     }
     Future<RouteMatchList> processRedirectorResult(RouteMatchList matches) {
       if (matches.isEmpty) {
@@ -108,9 +98,16 @@ class GoRouteInformationParser extends RouteInformationParser<RouteMatchList> {
 
   /// for use by the Router architecture as part of the RouteInformationParser
   @override
-  RouteInformation restoreRouteInformation(RouteMatchList configuration) {
+  RouteInformation? restoreRouteInformation(RouteMatchList configuration) {
+    if (configuration.isEmpty) {
+      return null;
+    }
+    if (configuration.matches.last is ImperativeRouteMatch) {
+      configuration =
+          (configuration.matches.last as ImperativeRouteMatch).matches;
+    }
     return RouteInformation(
-      location: configuration.location.toString(),
+      location: configuration.uri.toString(),
       state: configuration.extra,
     );
   }
