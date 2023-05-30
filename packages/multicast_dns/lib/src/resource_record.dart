@@ -303,7 +303,7 @@ class ResourceRecordQuery {
       multicast: isMulticast,
     );
   }
-  List<int> encodeRecord(r) {
+  List<int> encodeRecord(ResourceRecord r) {
     return encodeResourceRecord(fullyQualifiedName, r,
       multicast: isMulticast,
     );
@@ -325,7 +325,7 @@ class ResourceRecordQuery {
 
   @override
   String toString() =>
-      'ResourceRecordQuery{$fullyQualifiedName, type: ${ResourceRecordType.toDebugString(resourceRecordType)}, isMulticast: $isMulticast}';
+      'ResourceRecordQuery{$fullyQualifiedName, type: ${resourceRecordType.name}, isMulticast: $isMulticast}';
 }
 
 /// Base implementation of DNS resource records (RRs).
